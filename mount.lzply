@@ -1,0 +1,80 @@
+#!/bin/sh
+# mount.lzply — mount helper for lzply archives.
+#
+# Installed as /sbin/mount.lzply so that:
+#     mount -t lzply archive.lzply /mnt/point [-o cache=N]
+# works. Invoked by mount(8) as:
+#     mount.lzply <device> <dir> [-s] [-v] [-n] [-o options]
+#
+# Options are passed to lzply_mount(1); lzply_mount consumes cache=
+# from the -o string and passes the rest (e.g. allow_other,
+# ro) to FUSE. The exit status is lzply_mount's (0 on a successful mount).
+
+LZPLY_MOUNT=/usr/local/bin/lzply_mount
+
+if [ $# -lt 2 ]; then
+    echo "usage: mount -t lzply <archive.lzply> <dir> [-o cache=N]" >&2
+    exit 1
+fi
+
+device=$1
+dir=$2
+shift 2
+
+opts=""
+verbose=0
+sloppy=0
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        -o)
+            shift
+            if [ $# -eq 0 ]; then
+                echo "mount.lzply: -o needs a value" >&2
+                exit 1
+            fi
+            if [ -n "$opts" ]; then
+                opts="$opts,$1"
+            else
+                opts="$1"
+            fi
+            ;;
+        -o*)
+            # -oVALUE form
+            o=${1#-o}
+            if [ -n "$opts" ]; then
+                opts="$opts,$o"
+            else
+                opts="$o"
+            fi
+            ;;
+        -v)
+            verbose=1
+            ;;
+        -s)
+            sloppy=1
+            ;;
+        -n)
+            # no-mtab: nothing to do
+            ;;
+        *)
+            if [ "$sloppy" -eq 1 ]; then
+                echo "mount.lzply: ignoring unknown option '$1'" >&2
+            else
+                echo "mount.lzply: unknown option '$1'" >&2
+                exit 1
+            fi
+            ;;
+    esac
+    shift
+done
+
+if [ "$verbose" -eq 1 ]; then
+    echo "mount.lzply: mounting $device on $dir" >&2
+fi
+
+if [ -n "$opts" ]; then
+    exec "$LZPLY_MOUNT" -o "$opts" "$device" "$dir"
+else
+    exec "$LZPLY_MOUNT" "$device" "$dir"
+fi

@@ -1,0 +1,16 @@
+# build artifacts
+*.o
+*.a
+/lzply
+/lzply_check
+/lzply_heal
+/lzply_mount
+/lzply_refresh
+/lzply_stat
+/lzply_hyper
+/bch_test
+/lzprobe
+# generated test data and test working dirs
+/testdata/
+/testwork/
+/testwork-hyper/
