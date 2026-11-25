@@ -121,6 +121,7 @@ test: testdata bch_test lzply lzply_mount lzply_stat lzply_heal lzply_check lzpl
 	else echo "run_hyper_tests.sh not found"; exit 1; fi
 
 install: lzply lzply_mount lzply_stat lzply_heal lzply_check lzply_refresh lzply_hyper
+	mkdir -p $(PREFIX)/bin
 	install -m 755 lzply $(PREFIX)/bin/lzply
 	install -m 755 lzply_mount $(PREFIX)/bin/lzply_mount
 	install -m 755 lzply_stat $(PREFIX)/bin/lzply_stat
