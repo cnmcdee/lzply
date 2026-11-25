@@ -53,6 +53,31 @@ BCH-decode -> decompress   (on read)
   and `-datestart` / `-dateend` / `-year` filter on it (see below).
   File mode is preserved too; ownership is not.
 
+## The tools
+
+Seven programs, one family. All are plain C, built by `make`
+(see "Building" below), and share the BCH codec (`bch.c`) and the
+SHA-256 implementation (`sha256.c`).
+
+* **`lzply`** — the archiver. Create, extract, test, list, inspect
+  (`-i`), tree (`-tr`), append (`-a`), date filters, store mode.
+  The core of the repo.
+* **`lzply_mount`** — mount a `.lzply` archive as a writable
+  filesystem (FUSE). `mount -t lzply` works too.
+* **`lzply_stat`** — statistics for an archive or a mount point:
+  sizes, compression %, polynomial, t, parity bits, ECC overhead %.
+* **`lzply_heal`** — strip the BCH parity and re-encode it, at the
+  same level or a higher one, without touching the compressed data.
+* **`lzply_check`** — measure the bit-error rate (BER) of an archive
+  or a mount, to watch for filesystem degradation.
+* **`lzply_refresh`** — rewrite a file over itself (1–3 passes) to
+  freshen the platter on older spinning disks.
+* **`lzply_hyper`** — a striped volume (8 bit-plane data stripes +
+  P/Q/R parity) that rebuilds up to 3 dead stripes. See
+  `README-hyper.md` for the full documentation.
+
+License: MIT — see `LICENSE`.
+
 ## Format (v4; a single format, all integers little-endian)
 
 ```
@@ -561,3 +586,18 @@ disks. On SSDs wear-levelling means a rewrite does not hit the
 same cells, so it is specifically for older physical (magnetic)
 drives. The whole file is buffered in memory, like the rest of
 the lzply family.
+
+## lzply_hyper — a striped volume that rebuilds up to 3 dead stripes
+
+`lzply_hyper` is a separate program in this repo: a config-file
+driven striped volume. Eight data stripes hold the file's bits
+(one bit per stripe, bit-plane layout), and one to three parity
+stripes hold P (XOR), Q and R (GF(256)) parity, so the volume
+survives the loss of 1, 2, or 3 data stripes. BCH error correction
+and SHA-256 cover bit rot on top of that. Writes can be slow;
+reads are the priority (~35 MiB/s, BCH syndrome bound).
+
+Full documentation — config format, commands (`-init`, `write`,
+`read`, `list`, `check`, `-rebuild`), the parity scheme, the
+1/2/3-stripe-loss demos, and the 56-test suite — is in
+`README-hyper.md`.
