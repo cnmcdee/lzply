@@ -101,7 +101,13 @@ bch_test: bch.c bch_test.c bch.h bch_polys.h
 # machine with /dev/fuse. (Needs libfuse3-dev; present on the server
 # and the dev VM. The mount tests themselves still skip cleanly
 # where /dev/fuse is absent.)
-test: bch_test lzply lzply_mount lzply_stat lzply_heal lzply_check lzply_refresh lzply_hyper
+# testdata/ is generated (it includes a 50 MiB random file) and gitignored,
+# so a fresh clone has none. Build it on demand so `make test` works
+# straight from a clone.
+testdata:
+	@if [ ! -d testdata/mixed ]; then ./tests/make_testdata.sh; fi
+
+test: testdata bch_test lzply lzply_mount lzply_stat lzply_heal lzply_check lzply_refresh lzply_hyper
 	./bch_test
 	if [ -x ./tests/run_tests.sh ]; then \
 		./tests/run_tests.sh ./lzply; \
