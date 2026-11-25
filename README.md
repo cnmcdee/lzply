@@ -78,6 +78,38 @@ SHA-256 implementation (`sha256.c`).
 
 License: MIT — see `LICENSE`.
 
+## The BCH study — the numbers behind the polynomials
+
+The 82 generator polynomials embedded in the binaries come from
+`rssearch`, an exhaustive search over shortened binary BCH codes
+(parent N = 2^m − 1), comparing each against Reed-Solomon for the
+same payload length and error level, under a parity cap of
+r ≤ n/8. The search covered payloads 8–524,287 bytes,
+t ∈ {1, 2, 4, 8, 16, 32}.
+
+* **3,145,030 finds** across 3,145,680 (length, t) pairs —
+  **99.979% coverage**. The 650 non-finds are all small payloads
+  (L = 8..383, t ≥ 2) where the parity cap chokes, not RS wins.
+* **495,386,012 parity bits saved** in total (~59 MiB) versus
+  Reed-Solomon.
+* **Best single saving: 512 bits** — payload 524,287 bytes, t=32:
+  BCH 704 bits vs RS 1,216.
+* **Saving by band:** m=17: 39.3%, m=18: 40.0%, m=19: 40.6%,
+  m=20: 41.2%, m=21: 41.7%, m=22: 42.1%. The ratio approaches
+  50% as m grows; direct (orbit-only) construction reaches
+  49.41% at m=256 (t=32: 8,192 vs 16,192 RS bits).
+* **The 36 polynomials for m=17–22 (IDs 002f–0052) are not in any
+  published table** — they had to be computed. The m≤16 polys are
+  the standard textbook narrow-sense primitive BCH generators.
+* **Frontier: m=22.** The exhaustive scan stopped there because
+  m=23 was estimated at ~12 hours (band cost grows ~4× per m).
+  The original crawl (m≤18, 16,377 lengths) finished in 274
+  seconds; m=22 alone took 3.04 hours.
+
+Full write-up, including the prior-art check and the per-length
+tables:
+http://107.152.42.152:2368/reed-solomon-is-leaving-40-of-your-parity-on-the-table-i-searched-16-377-payload-lengths-and-found-97-612-codes-that-beat-it-all-58-polynomials-full-source/
+
 ## Format (v4; a single format, all integers little-endian)
 
 ```
