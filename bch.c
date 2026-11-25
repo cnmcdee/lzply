@@ -203,17 +203,17 @@ static void bch_ctx_free(bch_ctx_t *c)
     free(c);
 }
 
-/* table-driven update: feed one whole byte into the remainder. */
+/* table-driven update: feed one whole byte into the remainder.
+ * The shift-left-by-one-byte and the table XOR fuse into a single
+ * pass: new rem[i] = old rem[i+1] ^ T[idx][i]. Reading rem[i+1]
+ * before it is overwritten (we sweep i upward) keeps this exact. */
 static void rem_feed_byte(uint8_t *rem, uint8_t b, const bch_ctx_t *c)
 {
     int idx = rem[0] ^ b;
-    /* shift left by 8 bits (one byte) */
-    for (int i = 0; i < c->nb - 1; i++)
-        rem[i] = rem[i + 1];
-    rem[c->nb - 1] = 0;
     const uint8_t *t = c->table + (size_t)idx * c->nb;
-    for (int i = 0; i < c->nb; i++)
-        rem[i] ^= t[i];
+    for (int i = 0; i < c->nb - 1; i++)
+        rem[i] = rem[i + 1] ^ t[i];
+    rem[c->nb - 1] = t[c->nb - 1];
 }
 
 /* remainder of the data bytes alone (== parity P(x)). */
@@ -482,23 +482,28 @@ int bch_decode_block(const uint8_t *in, size_t in_len, size_t data_len,
     if (!c)
         return -1;
     uint8_t *rem = malloc(nb);
-    uint8_t *work = malloc(in_len);
-    if (!rem || !work) {
+    if (!rem) {
+        bch_ctx_free(c);
+        return -1;
+    }
+    /* Syndrome first, straight from the input: the common clean case
+     * needs no working copy at all. Only if the remainder is non-zero
+     * do we copy the block into `work` for Berlekamp-Massey / Chien. */
+    rem_of_codeword(in, data_len, in + data_len, c, rem);
+    if (rem_is_zero(rem, nb)) {
+        /* no errors */
+        memcpy(out, in, data_len);
         free(rem);
-        free(work);
+        bch_ctx_free(c);
+        return 0;
+    }
+    uint8_t *work = malloc(in_len);
+    if (!work) {
+        free(rem);
         bch_ctx_free(c);
         return -1;
     }
     memcpy(work, in, in_len);
-    rem_of_codeword(work, data_len, work + data_len, c, rem);
-    if (rem_is_zero(rem, nb)) {
-        /* no errors */
-        memcpy(out, work, data_len);
-        free(rem);
-        free(work);
-        bch_ctx_free(c);
-        return 0;
-    }
 
     /* syndromes S_j = R(alpha^j) * alpha^(-j*r), j = 1..2t */
     const gf_tables_t *tab = gf_tables_for(m);
