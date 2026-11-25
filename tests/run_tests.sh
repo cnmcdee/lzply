@@ -470,8 +470,12 @@ echo "$OUT" | grep "insp/a.txt" | grep -q "BCH 00" &&
 echo "$OUT" | grep "insp/sub/b.txt" | grep -q "2025-07-20 14:00:00 UTC" &&
     ok "-i: sub/b.txt shows 2025-07-20 mtime" ||
     bad "-i: sub/b.txt shows 2025-07-20 mtime"
-echo "$OUT" | grep "insp/sub/" | grep -q "0750" &&
-echo "$OUT" | grep "insp/sub/" | grep -q "drwxr-x---" &&
+# The numeric check is "750", not "0750": as root, chmod does not clear
+# a setgid bit inherited from a setgid parent directory, so the mode
+# can be 2750. The symbolic check accepts 's' (setgid) or 'x' in the
+# group-execute slot for the same reason.
+echo "$OUT" | grep "insp/sub/" | grep -q "750" &&
+echo "$OUT" | grep "insp/sub/" | grep -Eq "drwxr-[xs]---" &&
     ok "-i: sub/ shows 0750/drwxr-x---" ||
     bad "-i: sub/ shows 0750/drwxr-x---"
 echo "$OUT" | grep "insp/empty/" | grep -q "directory" &&

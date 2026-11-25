@@ -717,13 +717,17 @@ void fmt_mtime(uint64_t mtime, char *buf, size_t bufsz){
 
 /* Format permissions as a 10-character string, e.g. "drwxr-xr-x"
  * or "-rw-r--r--". The stored mode holds only the low 12 bits, so
- * the type letter comes from is_dir. */
+ * the type letter comes from is_dir. Setuid/setgid/sticky are
+ * rendered in the execute slots ('s'/'S', 't'/'T'), like ls. */
 void fmt_perm(int is_dir, uint32_t mode, char *buf){
     static const char *rwx = "rwxrwxrwx";
     int i;
     buf[0] = is_dir ? 'd' : '-';
     for (i = 0; i < 9; i++)
         buf[1 + i] = (mode & (1u << (8 - i))) ? rwx[i] : '-';
+    if (mode & 04000u) buf[3] = (mode & 0100u) ? 's' : 'S';
+    if (mode & 02000u) buf[6] = (mode & 0010u) ? 's' : 'S';
+    if (mode & 01000u) buf[9] = (mode & 0001u) ? 't' : 'T';
     buf[10] = '\0';
 }
 
