@@ -108,7 +108,7 @@ t ∈ {1, 2, 4, 8, 16, 32}.
 
 Full write-up, including the prior-art check and the per-length
 tables:
-http://107.152.42.152:2368/reed-solomon-is-leaving-40-of-your-parity-on-the-table-i-searched-16-377-payload-lengths-and-found-97-612-codes-that-beat-it-all-58-polynomials-full-source/
+https://www.lzply.com/reed-solomon-is-leaving-40-of-your-parity-on-the-table-i-searched-16-377-payload-lengths-and-found-97-612-codes-that-beat-it-all-58-polynomials-full-source/
 
 ## Format (v4; a single format, all integers little-endian)
 
